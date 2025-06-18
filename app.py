@@ -42,32 +42,8 @@ if "deck" not in st.session_state:
         st.session_state.deck = []
 
 
-BASE_DIR = "H:/Mi unidad/Eras"  # Use forward slashes or double backslashes
-
-def build_path(row):
-    base = f"{BASE_DIR}/cartas_LOWRES/E{row['era']}"
-    class_letter = row['clase'][0] if pd.notna(row['clase']) else "Other"
-    
-    if class_letter == "B":
-        class_folder = "BOSQUEMAGO"
-    elif class_letter == "D":
-        class_folder = "DISRUPCION"
-    elif class_letter == "P":
-        class_folder = "PESADILLA"
-    elif class_letter == "G":
-        class_folder = "GUERRERO"
-    else:
-        class_folder = "NONE"
-
-    filename = f"E{row['era']}" + (f"_{row['subera']}" if row['subera'] > 0 else "")
-    filename += f"-{class_letter}{row['numero']:02d} {row['nombre']}.png"
-
-    card_path = os.path.join(base, class_folder, filename)
-
-    return card_path
 
 # Rename columns for consistency
-#df["path"] = df.apply(build_path, axis=1)
 df = df.rename(columns={
     'id': 'card_id',
     'nombre': 'name',
@@ -108,8 +84,7 @@ st.query_params.search = search_name
 # Sidebar Filters
 #st.sidebar.title("Filter Cards")
 
-#era = st.sidebar.selectbox("Era", ["Any"] + sorted(df["era"].unique()), index=0)
-era_default = params.get("era", "Any")
+era_default = params.get("era", 1)
 era = st.sidebar.selectbox("Era", ["Any"] + sorted(df["era"].unique()), index=0 if era_default == "Any" else sorted(df["era"].unique()).index(int(era_default)) + 1)
 st.query_params.era = era
 
