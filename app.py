@@ -5,6 +5,16 @@ import streamlit as st
 import pandas as pd
 import os
 from PIL import Image
+from io import BytesIO
+import requests
+
+
+# Cache helper
+def get_cache_path(url, cache_dir="/tmp/image_cache"):
+    import hashlib
+    os.makedirs(cache_dir, exist_ok=True)
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+    return os.path.join(cache_dir, f"{url_hash}.png")
 
 
 # === Load query params ===
@@ -375,124 +385,124 @@ page_width_px = 1000
 cards_per_row = max(1, page_width_px // card_width_px)
 
 # === Display Cards with Per-Card Container ===
-if filtered.empty:
-    st.write("No cards match the filter.")
-else:
-    visible_index = 0
-    last_era, last_subera, last_class = None, None, None
+visible_index = 0
+last_era, last_subera, last_class = None, None, None
 
-    for _, row in filtered.iterrows():
-        if not show_empty and row["name"] == "Nac":
-            continue
+for _, row in filtered.iterrows():
+    if not show_empty and row["name"] == "Nac":
+        continue
 
-        current_era = row["era"]
-        current_subera = row["subera"]
-        current_class= row['class'][0]
+    current_era = row["era"]
+    current_subera = row["subera"]
+    current_class = row['class'][0]
 
-        # Insert divider before new era/subera block
-        if sets_title and (last_era != current_era or last_subera != current_subera or last_class != current_class):
-            subera_label = f".{current_subera}" if current_subera > 0 else ""
-            class_label = f" - {CLASS_MAP[current_class]}" if current_class!=last_class else ""
-            st.markdown(
-                f"<h3 style='margin-top: 2rem; border-top: 2px solid #444; padding-top: 0.5rem;'>"
-                f"○ Era {current_era}{subera_label}{class_label}</h3>",
-                unsafe_allow_html=True
-            )
-            last_era, last_subera, last_class = current_era, current_subera, current_class
-            visible_index = 0  # reset row position after each divider
+    if sets_title and (last_era != current_era or last_subera != current_subera or last_class != current_class):
+        subera_label = f".{current_subera}" if current_subera > 0 else ""
+        class_label = f" - {CLASS_MAP[current_class]}" if current_class != last_class else ""
+        st.markdown(
+            f"<h3 style='margin-top: 2rem; border-top: 2px solid #444; padding-top: 0.5rem;'>"
+            f"○ Era {current_era}{subera_label}{class_label}</h3>",
+            unsafe_allow_html=True
+        )
+        last_era, last_subera, last_class = current_era, current_subera, current_class
+        visible_index = 0
 
-        if visible_index % cards_per_row == 0:
-            card_columns = st.columns(cards_per_row)
+    if visible_index % cards_per_row == 0:
+        card_columns = st.columns(cards_per_row)
 
-        with card_columns[visible_index % cards_per_row]:
-            with st.container():
-                try:
-                    if row["name"] == "Nac":
-                        #img_path = os.path.join(BASE_DIR, "cartas_LOWRES", "BACKCARD", "BACKCARD.png")
-                        img_url = "https://res.cloudinary.com/dtwiayh6c/image/upload/v1750276123/cartas/BACKCARD/BACKCARD.png"
+    with card_columns[visible_index % cards_per_row]:
+        with st.container():
+            try:
+                if row["name"] == "Nac":
+                    img_url = "https://res.cloudinary.com/dtwiayh6c/image/upload/v1750276123/cartas/BACKCARD/BACKCARD.png"
+                else:
+                    img_url = row["url"]
+
+                if pd.notna(img_url):
+                    cache_path = get_cache_path(img_url)
+                    if os.path.exists(cache_path):
+                        img = Image.open(cache_path)
                     else:
-                        #img_path = row["path"]
-                        img_url = row["url"]
+                        response = requests.get(img_url)
+                        img = Image.open(BytesIO(response.content))
+                        img.save(cache_path)
 
-                    #if os.path.exists(img_path):
-                    #    img = Image.open(img_path)
-                    if pd.notna(img_url):
-                        st.image(img_url, use_container_width=True)
+                    st.image(img, use_container_width=True)
 
-                        if show_names:
+                    if show_names:
+                        st.markdown(
+                            f"<div style='text-align: center; font-weight: bold; height: 80px; overflow: hidden;'>{row['name']}</div>",
+                            unsafe_allow_html=True
+                        )
+
+                    if deck_build:
+                        count = st.session_state.deck.count(row['card_id'])
+                        unique_id = f"{row['card_id']}_{visible_index}"
+
+                        col1, col2, col3, col4, col5 = st.columns([0.5, 1, 1, 1, 0.5])
+
+                        with col2:
+                            st.button("➖", key=f"remove_{unique_id}",
+                                    on_click=remove_from_deck,
+                                    args=(row['card_id'],))
+
+                        with col3:
                             st.markdown(
-                                f"<div style='text-align: center; font-weight: bold; height: 80px; overflow: hidden;'>{row['name']}</div>",
+                                f"<div style='text-align: center; font-weight: bold;'>{count}</div>",
                                 unsafe_allow_html=True
                             )
 
-                        if deck_build:
-                            count = st.session_state.deck.count(row['card_id'])
-                            unique_id = f"{row['card_id']}_{visible_index}"
+                        with col4:
+                            st.button("➕", key=f"add_{unique_id}",
+                                    on_click=add_to_deck,
+                                    args=(row['card_id'],),
+                                    disabled=(count >= 4))
 
-                            col1, col2, col3, col4, col5 = st.columns([0.5, 1, 1, 1, 0.5])
-
-                            with col2:
-                                st.button("➖", key=f"remove_{unique_id}",
-                                        on_click=remove_from_deck,
-                                        args=(row['card_id'],))
-
-                            with col3:
-                                st.markdown(
-                                    f"<div style='text-align: center; font-weight: bold;'>{count}</div>",
-                                    unsafe_allow_html=True
-                                )
-
-                            with col4:
-                                st.button("➕", key=f"add_{unique_id}",
-                                        on_click=add_to_deck,
-                                        args=(row['card_id'],),
-                                        disabled=(count >= 4))
-
-                        # New: expandable details
-                        if deploy_info:
-                            with st.expander("📖 Card Details"):
-                                st.markdown(f"""
-                                    **Name**: {row['name']}  
-                                    **Era**: {int(row['era'])}  
-                                    **Subera**: {int(row['subera'])}  
-                                    **Class**: {CLASS_MAP[row['class']] if pd.notna(row["class"]) else "-"}  
-                                    **Type**: {(f"[{row['type'].replace('-', ' | ')}]" if pd.notna(row["type"]) else "[|]") if pd.notna(row["type"]) else "-"}  
-                                    **Category**: {row['category'] if pd.notna(row["category"]) else "-"}  
-                                    **Level**: {int(row['lvl']) if pd.notna(row["lvl"]) else "-"}  
-                                    **Strength**: {int(row['strength']) if pd.notna(row["strength"]) else "-"}  
-                                    **Cost**: {int(row['cost']) if pd.notna(row["cost"]) else "-"}  
-                                    **Special Cost**: {int(row['special cost']) if pd.notna(row['special cost']) else "-"}
-                                """)
+                    if deploy_info:
+                        with st.expander("📖 Card Details"):
+                            st.markdown(f"""
+                                **Name**: {row['name']}  
+                                **Era**: {int(row['era'])}  
+                                **Subera**: {int(row['subera'])}  
+                                **Class**: {" - ".join(CLASS_MAP.get(cl, cl) for cl in row['class'].split("-")) if pd.notna(row["class"]) else "-"}  
+                                **Type**: {(f"[{row['type'].replace('-', ' | ')}]" if pd.notna(row["type"]) else "[|]") if pd.notna(row["type"]) else "-"}  
+                                **Category**: {row['category'] if pd.notna(row["category"]) else "-"}  
+                                **Level**: {int(row['lvl']) if pd.notna(row["lvl"]) else "-"}  
+                                **Strength**: {int(row['strength']) if pd.notna(row["strength"]) else "-"}  
+                                **Cost**: {int(row['cost']) if pd.notna(row["cost"]) else "-"}  
+                                **Special Cost**: {int(row['special cost']) if pd.notna(row['special cost']) else "-"}
+                            """)
+                else:
+                    # Fallback for missing image
+                    if row['subera'] > 0:
+                        card_code = f"E{row['era']}.{row['subera']}-{row['class']}{int(row['number']):02d}"
                     else:
-                        if row['subera'] > 0:
-                            card_code = f"E{row['era']}.{row['subera']}-{row['class']}{int(row['number']):02d}"
-                        else:
-                            card_code = f"E{row['era']}-{row['class']}{int(row['number']):02d}"
+                        card_code = f"E{row['era']}-{row['class']}{int(row['number']):02d}"
 
-                        st.markdown(f"""
-                            <div style="
-                                width: 100%;
-                                aspect-ratio: 189 / 264;
-                                background-color: #000;
-                                color: red;
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                text-align: center;
-                                font-weight: bold;
-                                border-radius: 8px;
-                            ">
-                                Missing card:<br>{card_code} {row['name']}
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style="
+                            width: 100%;
+                            aspect-ratio: 189 / 264;
+                            background-color: #000;
+                            color: red;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            text-align: center;
+                            font-weight: bold;
+                            border-radius: 8px;
+                        ">
+                            Missing card:<br>{card_code} {row['name']}
+                        </div>
+                    """, unsafe_allow_html=True)
 
-                        if show_names:
-                            st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                except Exception as e:
-                    st.markdown(
-                        f"<div style='height: 460px; text-align: center; color: orange;'>Error:<br><b>{row['name']}</b></div>",
-                        unsafe_allow_html=True
-                    )
-                    print(e)
+                    if show_names:
+                        st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.markdown(
+                    f"<div style='height: 460px; text-align: center; color: orange;'>Error:<br><b>{row['name']}</b></div>",
+                    unsafe_allow_html=True
+                )
+                print(f"Error showing card {row['card_id']} - {e}")
 
-        visible_index += 1
+    visible_index += 1
