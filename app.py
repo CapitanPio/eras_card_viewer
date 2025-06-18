@@ -260,32 +260,23 @@ from collections import Counter
 if "deck" not in st.session_state:
     st.session_state.deck = []
 
-
-def save_deck():
-    with open(DECK_SAVE_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.deck, f)
-
 def add_to_deck(card_id):
     count = st.session_state.deck.count(card_id)
     if count < 4:
         st.session_state.deck.append(card_id)
-        save_deck()
 
 def remove_from_deck(card_id):
     if card_id in st.session_state.deck:
         st.session_state.deck.remove(card_id)
-        save_deck()
 
 def clear_deck():
     st.session_state.deck = []
-    save_deck()
 
 def upload_deck(uploaded_deck):
     try:
         imported_deck = json.load(uploaded_deck)
         if isinstance(imported_deck, list) and all(isinstance(x, (int, str)) for x in imported_deck):
             st.session_state.deck = imported_deck
-            save_deck()
     except Exception as e:
         st.error(f"Failed to load deck: {e}")
 
