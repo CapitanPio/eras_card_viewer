@@ -1,12 +1,12 @@
 import json
 import io
 
-import streamlit as st
-import pandas as pd
+import streamlit as st # type: ignore
+import pandas as pd # type: ignore
 import os
 from PIL import Image
 from io import BytesIO
-import requests
+import requests # type: ignore
 import tempfile
 
 
@@ -29,17 +29,9 @@ df_links = pd.read_excel("uploaded_image_links.xlsx")
 df = df.merge(df_links, on="id", how="left")
 
 
-# === Load saved deck from file ===
-DECK_SAVE_FILE = "saved_deck.json"
+# === Create the deck ===
 if "deck" not in st.session_state:
-    if os.path.exists(DECK_SAVE_FILE):
-        with open(DECK_SAVE_FILE, "r", encoding="utf-8") as f:
-            try:
-                st.session_state.deck = json.load(f)
-            except Exception:
-                st.session_state.deck = []
-    else:
-        st.session_state.deck = []
+    st.session_state.deck = []
 
 
 
