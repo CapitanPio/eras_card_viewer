@@ -85,7 +85,7 @@ st.query_params.search = search_name
 #st.sidebar.title("Filter Cards")
 
 era_default = params.get("era", 1)
-era = st.sidebar.selectbox("Era", ["Any"] + sorted(df["era"].unique()), index=0 if era_default == "Any" else sorted(df["era"].unique()).index(int(era_default)) + 1)
+era = st.sidebar.selectbox("Era", ["Any"] + sorted(df["era"].unique()), index=0 if era_default == 1 else sorted(df["era"].unique()).index(int(era_default)) + 1)
 st.query_params.era = era
 
 subera_options = sorted(df["subera"].unique())
