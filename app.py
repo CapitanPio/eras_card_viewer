@@ -84,8 +84,18 @@ st.query_params.search = search_name
 # Sidebar Filters
 #st.sidebar.title("Filter Cards")
 
-era_default = params.get("era", "Any")
-era = st.sidebar.selectbox("Era", ["Any"] + sorted(df["era"].unique()), index=0 if era_default == "1" else sorted(df["era"].unique()).index(int(era_default)) + 1)
+available_eras = sorted(df["era"].unique())
+era_options = ["Any"] + available_eras
+
+# Try to get 'era' from query params, default to 1
+try:
+    era_default = int(params.get("era", 1))
+    era_index = 0 if era_default == "Any" else available_eras.index(era_default) + 1
+except (ValueError, TypeError):
+    era_default = 1
+    era_index = available_eras.index(1) + 1 if 1 in available_eras else 0  # fallback if 1 not in list
+
+era = st.sidebar.selectbox("Era", era_options, index=era_index)
 st.query_params.era = era
 
 subera_options = sorted(df["subera"].unique())
