@@ -7,11 +7,13 @@ import os
 from PIL import Image
 from io import BytesIO
 import requests
+import tempfile
 
 
 # Cache helper
-def get_cache_path(url, cache_dir="/tmp/image_cache"):
+def get_cache_path(url):
     import hashlib
+    cache_dir = os.path.join(tempfile.gettempdir(), "image_cache")
     os.makedirs(cache_dir, exist_ok=True)
     url_hash = hashlib.md5(url.encode()).hexdigest()
     return os.path.join(cache_dir, f"{url_hash}.png")
