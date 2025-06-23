@@ -43,6 +43,7 @@ df = df.rename(columns={
     'subera': 'subera',
     'numero': 'number',
     'clase': 'class',
+    'identidad': 'identity',
     'tipos': 'type',
     'categoria': 'category',
     'nivel': 'lvl',
@@ -364,7 +365,7 @@ for _, row in filtered.iterrows():
 
     current_era = row["era"]
     current_subera = row["subera"]
-    current_class = row['class'][0]
+    current_class = row['identity']
 
     if sets_title and (last_era != current_era or last_subera != current_subera or last_class != current_class):
         subera_label = f".{current_subera}" if current_subera > 0 else ""
@@ -445,9 +446,9 @@ for _, row in filtered.iterrows():
                 else:
                     # Fallback for missing image
                     if row['subera'] > 0:
-                        card_code = f"E{row['era']}.{row['subera']}-{row['class']}{int(row['number']):02d}"
+                        card_code = f"E{row['era']}.{row['subera']}-{row['identity']}{int(row['number']):02d}"
                     else:
-                        card_code = f"E{row['era']}-{row['class']}{int(row['number']):02d}"
+                        card_code = f"E{row['era']}-{row['identity']}{int(row['number']):02d}"
 
                     st.markdown(f"""
                         <div style="
