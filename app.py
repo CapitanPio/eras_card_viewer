@@ -367,7 +367,7 @@ for _, row in filtered.iterrows():
     current_subera = row["subera"]
     current_class = row['identity']
 
-    if sets_title and (last_era != current_era or last_subera != current_subera or last_class != current_class):
+    if sets_title and (last_era != current_era or last_subera != current_subera or (last_class != current_class and not selected_classes)):
         subera_label = f".{current_subera}" if current_subera > 0 else ""
         class_label = f" - {CLASS_MAP[current_class]}" if current_class != last_class else ""
         st.markdown(
