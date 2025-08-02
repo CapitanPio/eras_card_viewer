@@ -104,6 +104,7 @@ all_clases_readable = [CLASS_MAP.get(cl, cl) for cl in all_clase_letters]
 
 selected_readable_classes = st.sidebar.multiselect("Filter by class(es)", options=all_clases_readable)
 selected_classes = [REVERSE_CLASS_MAP.get(c, c) for c in selected_readable_classes]
+class_identity_exclusive = st.sidebar.checkbox("Only class identity", value=True)
 
 # Extract and flatten all unique types
 type_series = df["type"].dropna().apply(lambda x: x.split("-"))
@@ -188,7 +189,10 @@ def has_all_classes(card_classes_str, required_classes):
 
 # Apply filter
 if selected_classes:
-    filtered = filtered[filtered["class"].apply(lambda x: has_all_classes(x, selected_classes))]
+    if class_identity_exclusive:
+        filtered = filtered[filtered["identity"].apply(lambda x: has_all_classes(x, selected_classes))]
+    else:
+        filtered = filtered[filtered["class"].apply(lambda x: has_all_classes(x, selected_classes))]
 
 def has_all_types(card_types_str, required_types):
     if not isinstance(card_types_str, str):
