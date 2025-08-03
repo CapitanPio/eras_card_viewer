@@ -104,7 +104,7 @@ all_clases_readable = [CLASS_MAP.get(cl, cl) for cl in all_clase_letters]
 
 selected_readable_classes = st.sidebar.multiselect("Filter by class(es)", options=all_clases_readable)
 selected_classes = [REVERSE_CLASS_MAP.get(c, c) for c in selected_readable_classes]
-class_identity_exclusive = st.sidebar.checkbox("Only class identity", value=True)
+class_identity_exclusive = st.sidebar.checkbox("Only class identity", value=False)
 
 # Extract and flatten all unique types
 type_series = df["type"].dropna().apply(lambda x: x.split("-"))
@@ -371,9 +371,15 @@ for _, row in filtered.iterrows():
     current_subera = row["subera"]
     current_class = row['identity']
 
-    if sets_title and (last_era != current_era or last_subera != current_subera or last_class != current_class):
+    print_title = True
+    if not sets_title:
+        print_title=False
+    if not (last_era != current_era or last_subera != current_subera or last_class != current_class):
+        print_title=False
+
+    if print_title:
         subera_label = f".{current_subera}" if current_subera > 0 else ""
-        #class_label = f" - {CLASS_MAP[current_class]}" if current_class != last_class else ""
+        class_label = f" - {CLASS_MAP[current_class]}" if current_class != last_class else ""
         st.markdown(
             f"<h3 style='margin-top: 2rem; border-top: 2px solid #444; padding-top: 0.5rem;'>"
             f"○ Era {current_era}{subera_label}</h3>",
